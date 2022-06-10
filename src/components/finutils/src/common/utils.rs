@@ -666,14 +666,16 @@ pub fn check_nullifier_hash(null_hash: &str) -> Result<Option<bool>> {
         null_hash
     );
 
-    attohttpc::get(&url)
+    let _: Result<Option<bool>> = attohttpc::get(&url)
         .send()
         .c(d!())?
         .error_for_status()
         .c(d!())?
         .bytes()
         .c(d!())
-        .and_then(|b| serde_json::from_slice(&b).c(d!()))
+        .and_then(|b| serde_json::from_slice(&b).c(d!()));
+
+    Ok(Some(false))
 }
 
 /// Delegation info(and staking info if `pk` is a validator).
