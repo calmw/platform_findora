@@ -59,7 +59,6 @@ pub mod storage {
     use fp_storage::*;
     use fp_types::crypto::HA256;
     use lazy_static::lazy_static;
-    // use std::cell::RefCell;
     use std::sync::Mutex;
 
     // Mapping for transaction hash and at block number with index.
@@ -78,7 +77,7 @@ pub mod storage {
 
     // The following data is stored in in-memory array
     // Current building block's transactions and receipts.
-    pub type PendingTransactions = Mutex<Vec<(Transaction, TransactionStatus, Receipt)>>;
+    type PendingTransactions = Mutex<Vec<(Transaction, TransactionStatus, Receipt)>>;
 
     lazy_static! {
         pub static ref DELIVER_PENDING_TRANSACTIONS: PendingTransactions =
@@ -162,9 +161,8 @@ impl<C: Config> ValidateUnsigned for App<C> {
             && ctx.run_mode == RunTxMode::Check
         {
             let Action::Transact(transaction) = call;
-            let origin = Self::recover_signer(transaction).ok_or_else(|| {
-                eg!("InvalidSignature, can not recover signer address")
-            })?;
+            let origin = Self::recover_signer_fast(ctx, transaction)
+                .ok_or_else(|| eg!("ExecuteTransaction: InvalidSignature"))?;
             let account_id = C::AddressMapping::convert_to_account_id(origin);
             C::AccountAsset::inc_nonce(ctx, &account_id)?;
         }
@@ -186,8 +184,8 @@ impl<C: Config> ValidateUnsigned for App<C> {
             return Err(eg!("Must provide chainId".to_string()));
         }
 
-        let origin = Self::recover_signer(transaction)
-            .ok_or_else(|| eg!("InvalidSignature, can not recover signer address"))?;
+        let origin = Self::recover_signer_fast(ctx, transaction)
+            .ok_or_else(|| eg!("ExecuteTransaction: InvalidSignature"))?;
 
         // Same as go ethereum, Min gas limit is 21000.
         if transaction.gas_limit < U256::from(21000)
