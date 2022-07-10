@@ -206,10 +206,12 @@ where
     /// The transaction will be applied to the effect_block after a series of judgments,
     /// and will be classified as pending or rejected depending on the result of the processing.
     pub fn cache_transaction(&mut self, txn: Transaction) -> Result<TxnHandle> {
+        println!("{}", 7);
         // Begin a block if the previous one has been commited
         if self.all_commited() {
             self.begin_block();
         }
+        println!("{}", 8);
 
         // The if statement above guarantees that we have a block.
         let mut block = self.block.as_mut().unwrap();
@@ -222,13 +224,16 @@ where
                     .apply_transaction(&mut block, txn_effect)
                     .c(d!("Failed to apply transaction"))
             });
+        println!("{}", 9);
         match temp_sid {
             Ok(temp_sid) => {
+                println!("{}", 10);
                 self.pending_txns.push((temp_sid, handle.clone(), txn));
                 self.txn_status.insert(handle.clone(), TxnStatus::Pending);
                 Ok(handle)
             }
             Err(e) => {
+                println!("{}", 11);
                 self.txn_status
                     .insert(handle, TxnStatus::Rejected(e.to_string()));
                 Err(e)

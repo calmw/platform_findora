@@ -122,6 +122,7 @@ pub fn init_chain(
 /// any new tx will trigger this callback before it can enter the mem-pool of tendermint
 pub fn check_tx(s: &mut ABCISubmissionServer, req: &RequestCheckTx) -> ResponseCheckTx {
     let mut resp = ResponseCheckTx::new();
+    println!("check_tx: 1");
 
     let tx_catalog = try_tx_catalog(req.get_tx(), false);
 
@@ -129,27 +130,37 @@ pub fn check_tx(s: &mut ABCISubmissionServer, req: &RequestCheckTx) -> ResponseC
 
     match tx_catalog {
         TxCatalog::FindoraTx => {
+            println!("check_tx: 2");
             if matches!(req.field_type, CheckTxType::New) {
+                println!("check_tx: 3");
                 if let Ok(txn) = convert_tx(req.get_tx()) {
+                    println!("check_tx: 4");
+                    println!("{:?}", txn);
                     if !txn.valid_in_abci() {
+                        println!("check_tx: 5");
                         resp.log = "Should not appear in ABCI".to_owned();
                         resp.code = 1;
                     } else if TX_HISTORY.read().contains_key(&txn.hash_tm_rawbytes()) {
+                        println!("check_tx: 6");
                         resp.log = "Historical transaction".to_owned();
                         resp.code = 1;
                     } else if is_tm_transaction(&txn)
                         && td_height < CFG.checkpoint.enable_triple_masking_height
                     {
+                        println!("check_tx: 7");
                         resp.code = 1;
                         resp.log = "Triple Masking is disabled".to_owned();
                     }
                 } else {
+                    println!("check_tx: 8");
                     resp.log = "Invalid format".to_owned();
                 }
+                println!("check_tx: 9");
             }
             resp
         }
         TxCatalog::EvmTx => {
+            println!("check_tx: 10");
             if CFG.checkpoint.disable_evm_block_height < td_height
                 && td_height < CFG.checkpoint.enable_frc20_height
             {
@@ -161,6 +172,7 @@ pub fn check_tx(s: &mut ABCISubmissionServer, req: &RequestCheckTx) -> ResponseC
             }
         }
         TxCatalog::Unknown => {
+            println!("check_tx: 11");
             resp.code = 1;
             resp.log = "Unknown transaction".to_owned();
             resp
@@ -232,19 +244,21 @@ pub fn deliver_tx(
     req: &RequestDeliverTx,
 ) -> ResponseDeliverTx {
     let mut resp = ResponseDeliverTx::new();
-
+    println!("{}", 1);
     let tx_catalog = try_tx_catalog(req.get_tx(), true);
     let td_height = TENDERMINT_BLOCK_HEIGHT.load(Ordering::Relaxed);
     const EVM_FIRST_BLOCK_HEIGHT: i64 = 142_5000;
 
     match tx_catalog {
         TxCatalog::FindoraTx => {
+            println!("{}", 2);
             if let Ok(txn) = convert_tx(req.get_tx()) {
+                println!("{}", 3);
                 let txhash = txn.hash_tm_rawbytes();
                 POOL.spawn_ok(async move {
                     TX_HISTORY.write().set_value(txhash, Default::default());
                 });
-
+                println!("{}", 4);
                 if txn.valid_in_abci() {
                     // Log print for monitor purpose
                     if td_height < EVM_FIRST_BLOCK_HEIGHT {
@@ -316,6 +330,7 @@ pub fn deliver_tx(
                     } else if is_tm_transaction(&txn)
                         && td_height < CFG.checkpoint.enable_triple_masking_height
                     {
+                        println!("{}", 5);
                         log::info!(target: "abciapp",
                             "Triple Masking transaction(FindoraTx) detected at early height {}: {:?}",
                             td_height, txn
@@ -324,6 +339,7 @@ pub fn deliver_tx(
                         resp.log = "Triple Masking is disabled".to_owned();
                         return resp;
                     } else if let Err(e) = s.la.write().cache_transaction(txn) {
+                        println!("{}", 6);
                         resp.code = 1;
                         resp.log = e.to_string();
                     }

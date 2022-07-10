@@ -86,6 +86,7 @@ use {
     },
     zei_algebra::prelude::{Scalar, ZeiFromToBytes},
 };
+use web_sys::console;
 
 /// Constant defining the git commit hash and commit date of the commit this library was built
 /// against.
@@ -582,6 +583,16 @@ impl TransactionBuilder {
                     e.get_lowest_msg()
                 ))
             })?;
+
+        console::log_1(&"Hello using web-sys".into());
+
+        let abar_to_ar_cache_len: JsValue = self.get_builder().abar_ar_cache.len().to_string().into();
+        console::log_2(&"Logging abar_to_ar_cache_len: ".into(), &abar_to_ar_cache_len);
+
+
+        let abar_to_bar_cache_len: JsValue = self.get_builder().abar_bar_cache.len().to_string().into();
+        console::log_2(&"Logging abar_to_bar_cache_len: ".into(), &abar_to_bar_cache_len);
+
 
         Ok(self)
     }

@@ -138,9 +138,11 @@ pub struct TransactionBuilder {
     #[allow(missing_docs)]
     pub no_replay_token: NoReplayToken,
     #[serde(skip)]
-    abar_bar_cache: Vec<AbarToBarPreNote>,
+    #[allow(missing_docs)]
+    pub abar_bar_cache: Vec<AbarToBarPreNote>,
     #[serde(skip)]
-    abar_ar_cache: Vec<AbarToArPreNote>,
+    #[allow(missing_docs)]
+    pub abar_ar_cache: Vec<AbarToArPreNote>,
     #[serde(skip)]
     abar_abar_cache: Vec<AXfrPreNote>,
 }

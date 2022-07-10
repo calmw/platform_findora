@@ -13,20 +13,18 @@ use {
     crate::api::DelegationInfo,
     crate::common::utils::{new_tx_builder, send_tx},
     crate::txn_builder::TransactionBuilder,
-    fp_utils::hashing::keccak_256,
     globutils::wallet,
     lazy_static::lazy_static,
     ledger::{
         data_model::{
-            gen_random_keypair, ATxoSID, AssetRules, AssetTypeCode, AssetTypePrefix,
-            Transaction, TxoSID, ASSET_TYPE_FRA, BLACK_HOLE_PUBKEY_STAKING,
+            gen_random_keypair, ATxoSID, AssetRules, AssetTypeCode, Transaction, TxoSID,
+            ASSET_TYPE_FRA, BLACK_HOLE_PUBKEY_STAKING,
         },
         staking::{
             check_delegation_amount, td_addr_to_bytes, td_pubkey_to_td_addr,
             td_pubkey_to_td_addr_bytes, PartialUnDelegation, StakerMemo,
             TendermintAddrRef,
         },
-        store::fbnc::NumKey,
     },
     rand_chacha::ChaChaRng,
     rand_core::SeedableRng,
@@ -707,10 +705,7 @@ pub fn create_asset(
 
     create_asset_x(&kp, memo, decimal, max_units, transferable, Some(code))
         .c(d!())
-        .map(|code| {
-            println!("type: {}", code.to_base64());
-            ()
-        })
+        .map(|_| ())
 }
 
 #[allow(missing_docs)]
@@ -723,9 +718,6 @@ pub fn create_asset_x(
     code: Option<AssetTypeCode>,
 ) -> Result<AssetTypeCode> {
     let code = code.unwrap_or_else(AssetTypeCode::gen_random);
-
-    let mut asset_code = AssetTypePrefix::UserDefined.bytes();
-    asset_code.append(&mut code.to_bytes());
 
     let mut rules = AssetRules::default();
     rules.set_decimals(decimal).c(d!())?;
@@ -740,8 +732,7 @@ pub fn create_asset_x(
         .c(d!())
         .map(|op| builder.add_operation(op))?;
 
-    utils::send_tx(&builder.take_transaction()?)
-        .map(|_| AssetTypeCode::new_from_vec(keccak_256(asset_code.as_slice()).to_vec()))
+    utils::send_tx(&builder.take_transaction().unwrap()).map(|_| code)
 }
 
 /// Issue a custom asset with specified amount

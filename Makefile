@@ -67,11 +67,13 @@ build_release: tendermint_cleveldb
 
 # Build for goleveldb
 build_goleveldb: tendermint_goleveldb
+
+
 	cargo build --bins -p abciapp -p finutils
 	$(call pack,debug)
 
 # Build for goleveldb
-build_release_goleveldb: tendermint_goleveldb
+build_release_goleveldb:
 	cargo build --release --bins -p abciapp -p finutils
 	$(call pack,release)
 

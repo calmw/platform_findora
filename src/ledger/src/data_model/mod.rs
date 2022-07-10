@@ -1021,27 +1021,6 @@ impl IssueAssetBody {
 }
 
 #[allow(missing_docs)]
-#[derive(Clone, Debug, Deserialize)]
-pub enum AssetTypePrefix {
-    UserDefined,
-    ERC20,
-    NFT,
-}
-
-impl AssetTypePrefix {
-    #[allow(missing_docs)]
-    pub fn bytes(&self) -> Vec<u8> {
-        let code = match self {
-            AssetTypePrefix::UserDefined => "56",
-            AssetTypePrefix::ERC20 => "77",
-            AssetTypePrefix::NFT => "02",
-        };
-
-        hex::decode(format!("{:0>64}", code)).unwrap()
-    }
-}
-
-#[allow(missing_docs)]
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct DefineAssetBody {
     pub asset: Box<Asset>,
@@ -1970,6 +1949,7 @@ impl Transaction {
     #[inline(always)]
     #[allow(missing_docs)]
     pub fn is_coinbase_tx(&self) -> bool {
+        println!("in is_coinbase_tx");
         self.body
             .operations
             .iter()
@@ -1979,6 +1959,7 @@ impl Transaction {
     /// All-in-one checker
     #[inline(always)]
     pub fn valid_in_abci(&self) -> bool {
+        println!("valid_in_abci");
         self.check_fee() && !self.is_coinbase_tx()
     }
 
@@ -1998,6 +1979,7 @@ impl Transaction {
         // But it seems enough when we combine it with limiting
         // the payload size of submission-server's http-requests.
 
+        println!("check_fee: 1");
         let mut min_fee = TX_FEE_MIN;
         // Charge double the min fee if the transaction is BarToAbar
         for op in self.body.operations.iter() {
@@ -2006,16 +1988,24 @@ impl Transaction {
             }
         }
 
+        println!("check_fee: 2");
+        println!("Operations {:?}", self.body.operations);
         self.is_coinbase_tx()
             || self.body.operations.iter().any(|ops| {
+            println!("check_fee: 3");
                 if let Operation::TransferAsset(ref x) = ops {
+                    println!("check_fee: 4");
                     return x.body.outputs.iter().any(|o| {
+                        println!("check_fee: 5");
                         if let XfrAssetType::NonConfidential(ty) = o.record.asset_type {
                             if ty == ASSET_TYPE_FRA
                                 && *BLACK_HOLE_PUBKEY == o.record.public_key
                             {
+                                println!("check_fee: 6");
                                 if let XfrAmount::NonConfidential(am) = o.record.amount {
+                                    println!("check_fee: 7");
                                     if am > (min_fee - 1) {
+                                        println!("check_fee: 8");
                                         return true;
                                     }
                                 }
@@ -2036,10 +2026,13 @@ impl Transaction {
                 } else if let Operation::BarToAbar(_) = ops {
                     return true;
                 } else if let Operation::AbarToBar(_) = ops {
+                    println!("check_fee: in AbarToBar");
                     return true;
                 } else if matches!(ops, Operation::UpdateValidator(_)) {
                     return true;
                 }
+
+            println!("check_fee: returning false");
                 false
             })
     }
