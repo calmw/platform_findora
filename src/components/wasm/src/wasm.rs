@@ -807,8 +807,8 @@ impl TransactionBuilder {
     }
 
     /// Extracts the serialized form of a transaction.
-    pub fn transaction(&self) -> String {
-        self.get_builder().serialize_str()
+    pub fn transaction(&mut self) -> String {
+        self.get_builder_mut().serialize_str()
     }
 
     /// Calculates transaction handle.

@@ -388,7 +388,7 @@ impl TransactionBuilder {
     }
 
     #[allow(missing_docs)]
-    pub fn take_transaction(mut self) -> Result<Transaction> {
+    pub fn take_transaction(&mut self) -> Result<Transaction> {
         let mut prng = ChaChaRng::from_entropy();
 
         // hasher txn. (IMPORTANT! KEEP THE same order)
@@ -408,7 +408,7 @@ impl TransactionBuilder {
         // finish abar to abar
         if self.abar_abar_cache.len() > 0 {
             let mut params: HashMap<(usize, usize), ProverParams> = HashMap::new();
-            for pre_note in self.abar_abar_cache {
+            for pre_note in &self.abar_abar_cache {
                 let key = (pre_note.body.inputs.len(), pre_note.body.outputs.len());
                 let param = if let Some(key) = params.get(&key) {
                     key
@@ -423,7 +423,7 @@ impl TransactionBuilder {
                 };
 
                 let note =
-                    finish_anon_xfr_note(&mut prng, param, pre_note, hasher.clone())?;
+                    finish_anon_xfr_note(&mut prng, param, pre_note.clone(), hasher.clone())?;
 
                 // Add operation
                 let inp = AnonTransferOps::new(note, self.no_replay_token).c(d!())?;
@@ -435,11 +435,11 @@ impl TransactionBuilder {
         // finish abar to bar
         if self.abar_bar_cache.len() > 0 {
             let params = ProverParams::abar_to_bar_params(MERKLE_TREE_DEPTH)?;
-            for pre_note in self.abar_bar_cache {
+            for pre_note in &self.abar_bar_cache {
                 let note = finish_abar_to_bar_note(
                     &mut prng,
                     &params,
-                    pre_note,
+                    pre_note.clone(),
                     hasher.clone(),
                 )?;
 
@@ -459,11 +459,11 @@ impl TransactionBuilder {
         // finish abar to ar
         if self.abar_ar_cache.len() > 0 {
             let params = ProverParams::abar_to_ar_params(MERKLE_TREE_DEPTH)?;
-            for pre_note in self.abar_ar_cache {
+            for pre_note in &self.abar_ar_cache {
                 let note = finish_abar_to_ar_note(
                     &mut prng,
                     &params,
-                    pre_note,
+                    pre_note.clone(),
                     hasher.clone(),
                 )?;
 
@@ -480,7 +480,7 @@ impl TransactionBuilder {
             }
         }
 
-        Ok(self.txn)
+        Ok(self.txn.clone())
     }
 
     /// Append a transaction memo
@@ -1031,7 +1031,8 @@ impl TransactionBuilder {
     }
 
     #[allow(missing_docs)]
-    pub fn serialize_str(&self) -> String {
+    pub fn serialize_str(&mut self) -> String {
+        self.take_transaction().unwrap();
         // Unwrap is safe because the underlying transaction is guaranteed to be serializable.
         serde_json::to_string(&self.txn).unwrap()
     }
